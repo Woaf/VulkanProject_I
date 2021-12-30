@@ -6,7 +6,17 @@ set(CMAKE_CXX_STANDARD 17)
 add_subdirectory(glfw)
 add_subdirectory(glm)
 
-add_executable(VulkanProject_I main.cpp)
+set (HEADERS
+    VulkanRenderer.h
+    Utilities.h
+)
+
+set (SOURCES
+    VulkanRenderer.cpp
+    main.cpp
+)
+
+add_executable(VulkanProject_I ${SOURCES})
 
 target_include_directories(VulkanProject_I PUBLIC
     glfw/include
