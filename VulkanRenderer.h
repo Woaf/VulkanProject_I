@@ -30,22 +30,27 @@ private:
 	GLFWwindow* window;
 
 	// vk components
+		// main components
 	VkInstance instance;
-
 	struct {
 		VkPhysicalDevice physicalDevice;
 		VkDevice logicalDevice;
 	} mainDevice;
-
 	VkQueue graphicsQueue;
 	VkQueue presentationQueue;
-
 	VkSurfaceKHR surface;
+	VkSwapchainKHR swapchain;
+	std::vector<SwapchainImage> swapchainImages;
+
+		// utility components
+	VkFormat swapchainImageFormat;
+	VkExtent2D swapchainExtent;
 
 	// vk functions
 	void CreateInstance ();
 	void CreateLogicalDevice ();
 	void CreateSurface ();
+	void CreateSwapchain ();
 
 	// get methods
 	void GetPhysicalDevice ();
@@ -57,7 +62,11 @@ private:
 	bool CheckDeviceExtensionSupport (VkPhysicalDevice device);
 	bool CheckDeviceSuitable (VkPhysicalDevice device);
 
+	VkSurfaceFormatKHR ChooseBestSurfaceFormat (const std::vector<VkSurfaceFormatKHR>& formats);
+	VkPresentModeKHR ChooseBestPresentationMode (const std::vector<VkPresentModeKHR>& presentationModes);
+	VkExtent2D ChooseSwapExtent (const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
 
+	VkImageView CreateImageView (VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 };
 
 

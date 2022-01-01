@@ -29,4 +29,10 @@ struct SwapchainDetails {
 	std::vector<VkPresentModeKHR> presentationModes;
 };
 
+
+struct SwapchainImage {
+	VkImage image;
+	VkImageView imageView;
+};
+
 #endif //VULKANPROJECT_I_UTILITIES_H
