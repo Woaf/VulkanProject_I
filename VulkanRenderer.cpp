@@ -1,7 +1,3 @@
-//
-// Created by Fazekas Bálint on 2021. 12. 30..
-//
-
 #include "VulkanRenderer.h"
 
 #include <algorithm>

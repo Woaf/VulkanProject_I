@@ -1,7 +1,3 @@
-//
-// Created by Fazekas Bálint on 2021. 12. 30..
-//
-
 #pragma once
 
 #ifndef VULKANPROJECT_I_VULKANRENDERER_H
