@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vector>
 #include <set>
+#include <array>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -38,15 +39,21 @@ private:
 	VkSwapchainKHR swapchain;
 	std::vector<SwapchainImage> swapchainImages;
 
+	VkPipeline graphicsPipeline;
+	VkPipelineLayout pipelineLayout;
+	VkRenderPass renderPass;
+
 		// utility components
 	VkFormat swapchainImageFormat;
 	VkExtent2D swapchainExtent;
+
 
 	// vk functions
 	void CreateInstance ();
 	void CreateLogicalDevice ();
 	void CreateSurface ();
 	void CreateSwapchain ();
+	void CreateRenderPass ();
 	void CreateGraphicsPipeline ();
 
 	// get methods
