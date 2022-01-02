@@ -447,8 +447,8 @@ VkImageView VulkanRenderer::CreateImageView (VkImage image, VkFormat format, VkI
 
 void VulkanRenderer::CreateGraphicsPipeline ()
 {
-	auto vertexShaderCode = ReadFile ("Shaders/vert.spv");
-	auto fragmentShaderCode = ReadFile ("Shaders/frag.spv");
+	auto vertexShaderCode = ReadFile ("../Shaders/vert.spv");
+	auto fragmentShaderCode = ReadFile ("../Shaders/frag.spv");
 
 	VkShaderModule vertexShaderModule = CreateShaderModule (vertexShaderCode);
 	VkShaderModule fragmentShaderModule = CreateShaderModule (fragmentShaderCode);
