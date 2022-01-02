@@ -22,6 +22,7 @@ int VulkanRenderer::InitRenderer (GLFWwindow *newWindow)
 		GetPhysicalDevice ();
 		CreateLogicalDevice ();
 		CreateSwapchain ();
+		CreateGraphicsPipeline ();
 	} catch (const std::runtime_error& runtimeError) {
 		std::cerr << "Error: " << runtimeError.what () << std::endl;
 		return EXIT_FAILURE;
@@ -441,4 +442,49 @@ VkImageView VulkanRenderer::CreateImageView (VkImage image, VkFormat format, VkI
 	}
 
 	return imageView;
+}
+
+
+void VulkanRenderer::CreateGraphicsPipeline ()
+{
+	auto vertexShaderCode = ReadFile ("Shaders/vert.spv");
+	auto fragmentShaderCode = ReadFile ("Shaders/frag.spv");
+
+	VkShaderModule vertexShaderModule = CreateShaderModule (vertexShaderCode);
+	VkShaderModule fragmentShaderModule = CreateShaderModule (fragmentShaderCode);
+
+	VkPipelineShaderStageCreateInfo vertexShaderCreateInfo {};
+	vertexShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertexShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertexShaderCreateInfo.module = vertexShaderModule;
+	vertexShaderCreateInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo fragmentShaderCreateInfo {};
+	fragmentShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragmentShaderCreateInfo.module = fragmentShaderModule;
+	fragmentShaderCreateInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo shaderStages[] {vertexShaderCreateInfo, fragmentShaderCreateInfo};
+
+	vkDestroyShaderModule (mainDevice.logicalDevice, fragmentShaderModule, nullptr);
+	vkDestroyShaderModule (mainDevice.logicalDevice, vertexShaderModule, nullptr);
+}
+
+
+VkShaderModule VulkanRenderer::CreateShaderModule (const std::vector<char> &code)
+{
+	VkShaderModuleCreateInfo shaderModuleCreateInfo {};
+	shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	shaderModuleCreateInfo.codeSize = code.size ();
+	shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*> (code.data ());
+
+	VkShaderModule shaderModule;
+	VkResult result = vkCreateShaderModule (mainDevice.logicalDevice, &shaderModuleCreateInfo, nullptr, &shaderModule);
+
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error ("Failed to create a shader module...");
+	}
+
+	return shaderModule;
 }

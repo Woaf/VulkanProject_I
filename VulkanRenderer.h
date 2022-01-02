@@ -47,6 +47,7 @@ private:
 	void CreateLogicalDevice ();
 	void CreateSurface ();
 	void CreateSwapchain ();
+	void CreateGraphicsPipeline ();
 
 	// get methods
 	void GetPhysicalDevice ();
@@ -63,6 +64,7 @@ private:
 	VkExtent2D ChooseSwapExtent (const VkSurfaceCapabilitiesKHR& surfaceCapabilities);
 
 	VkImageView CreateImageView (VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+	VkShaderModule CreateShaderModule (const std::vector<char>& code);
 };
 
 
