@@ -7,11 +7,6 @@ VulkanRenderer::VulkanRenderer ()
 }
 
 
-VulkanRenderer::~VulkanRenderer ()
-{
-}
-
-
 int VulkanRenderer::InitRenderer (GLFWwindow *newWindow)
 {
 	window = newWindow;
@@ -30,6 +25,26 @@ int VulkanRenderer::InitRenderer (GLFWwindow *newWindow)
 	}
 
 	return 0;
+}
+
+
+void VulkanRenderer::CleanUp ()
+{
+	vkDestroyPipeline (mainDevice.logicalDevice, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout (mainDevice.logicalDevice, pipelineLayout, nullptr);
+	vkDestroyRenderPass (mainDevice.logicalDevice, renderPass, nullptr);
+	for (auto image : swapchainImages) {
+		vkDestroyImageView (mainDevice.logicalDevice, image.imageView, nullptr);
+	}
+	vkDestroySwapchainKHR (mainDevice.logicalDevice, swapchain, nullptr);
+	vkDestroySurfaceKHR (instance, surface, nullptr);
+	vkDestroyDevice (mainDevice.logicalDevice, nullptr);
+	vkDestroyInstance (instance, nullptr);
+}
+
+
+VulkanRenderer::~VulkanRenderer ()
+{
 }
 
 
@@ -98,21 +113,6 @@ bool VulkanRenderer::CheckInstanceExtensionSupport (const std::vector<const char
 	}
 
 	return true;
-}
-
-
-void VulkanRenderer::CleanUp ()
-{
-	vkDestroyPipeline (mainDevice.logicalDevice, graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout (mainDevice.logicalDevice, pipelineLayout, nullptr);
-	vkDestroyRenderPass (mainDevice.logicalDevice, renderPass, nullptr);
-	for (auto image : swapchainImages) {
-		vkDestroyImageView (mainDevice.logicalDevice, image.imageView, nullptr);
-	}
-	vkDestroySwapchainKHR (mainDevice.logicalDevice, swapchain, nullptr);
-	vkDestroySurfaceKHR (instance, surface, nullptr);
-	vkDestroyDevice (mainDevice.logicalDevice, nullptr);
-	vkDestroyInstance (instance, nullptr);
 }
 
 
@@ -232,16 +232,6 @@ void VulkanRenderer::CreateLogicalDevice ()
 }
 
 
-void VulkanRenderer::CreateSurface ()
-{
-	VkResult result = glfwCreateWindowSurface (instance, window, nullptr, &surface);
-
-	if (result != VK_SUCCESS) {
-		throw std::runtime_error ("Failed to create a surface...");
-	}
-}
-
-
 bool VulkanRenderer::CheckDeviceExtensionSupport (VkPhysicalDevice device)
 {
 	uint32_t extensionCount = 0;
@@ -269,6 +259,46 @@ bool VulkanRenderer::CheckDeviceExtensionSupport (VkPhysicalDevice device)
 	}
 
 	return true;
+}
+
+
+void VulkanRenderer::CreateSurface ()
+{
+	VkResult result = glfwCreateWindowSurface (instance, window, nullptr, &surface);
+
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error ("Failed to create a surface...");
+	}
+}
+
+
+VkSurfaceFormatKHR VulkanRenderer::ChooseBestSurfaceFormat (const std::vector<VkSurfaceFormatKHR> &formats)
+{
+	if (formats.size () == 1 && formats.at (0).format == VK_FORMAT_UNDEFINED) {
+		return {VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+	}
+
+	for (const auto& format : formats) {
+		if ((format.format == VK_FORMAT_R8G8B8A8_UNORM || format.format == VK_FORMAT_B8G8R8A8_UNORM) &&
+			format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		{
+			return format;
+		}
+	}
+
+	return formats.at (0);
+}
+
+
+VkPresentModeKHR VulkanRenderer::ChooseBestPresentationMode (const std::vector<VkPresentModeKHR>& presentationModes)
+{
+	for (const auto& presentationMode : presentationModes) {
+		if (presentationMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+			return presentationMode;
+		}
+	}
+
+	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 
@@ -366,36 +396,6 @@ void VulkanRenderer::CreateSwapchain ()
 
 		swapchainImages.emplace_back (swapchainImage);
 	}
-}
-
-
-VkSurfaceFormatKHR VulkanRenderer::ChooseBestSurfaceFormat (const std::vector<VkSurfaceFormatKHR> &formats)
-{
-	if (formats.size () == 1 && formats.at (0).format == VK_FORMAT_UNDEFINED) {
-		return {VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-	}
-
-	for (const auto& format : formats) {
-		if ((format.format == VK_FORMAT_R8G8B8A8_UNORM || format.format == VK_FORMAT_B8G8R8A8_UNORM) &&
-			 format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-		{
-			return format;
-		}
-	}
-
-	return formats.at (0);
-}
-
-
-VkPresentModeKHR VulkanRenderer::ChooseBestPresentationMode (const std::vector<VkPresentModeKHR>& presentationModes)
-{
-	for (const auto& presentationMode : presentationModes) {
-		if (presentationMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-			return presentationMode;
-		}
-	}
-
-	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
 
