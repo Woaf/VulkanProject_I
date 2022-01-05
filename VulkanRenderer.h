@@ -38,10 +38,15 @@ private:
 	VkSurfaceKHR surface;
 	VkSwapchainKHR swapchain;
 	std::vector<SwapchainImage> swapchainImages;
+	std::vector<VkFramebuffer> swapchainFrameBuffers;
+	std::vector<VkCommandBuffer> commandBuffers;
 
 	VkPipeline graphicsPipeline;
 	VkPipelineLayout pipelineLayout;
 	VkRenderPass renderPass;
+
+	// pools
+	VkCommandPool graphicsCommandPool;
 
 		// utility components
 	VkFormat swapchainImageFormat;
@@ -55,11 +60,17 @@ private:
 	void CreateSwapchain ();
 	void CreateRenderPass ();
 	void CreateGraphicsPipeline ();
+	void CreateFrameBuffers ();
+	void CreateCommandPool ();
+	void CreateCommandBuffers ();
 
 	// get methods
 	void GetPhysicalDevice ();
 	QueueFamilyIndices GetQueueFamilies (VkPhysicalDevice device);
 	SwapchainDetails GetSwapchainDetails (VkPhysicalDevice device);
+
+	// record functions
+	void RecordCommands ();
 
 	// util functions
 	bool CheckInstanceExtensionSupport (const std::vector<const char*>* checkExtensions);

@@ -19,6 +19,10 @@ int VulkanRenderer::InitRenderer (GLFWwindow *newWindow)
 		CreateSwapchain ();
 		CreateRenderPass ();
 		CreateGraphicsPipeline ();
+		CreateFrameBuffers ();
+		CreateCommandPool ();
+		CreateCommandBuffers ();
+		RecordCommands ();
 	} catch (const std::runtime_error& runtimeError) {
 		std::cerr << "Error: " << runtimeError.what () << std::endl;
 		return EXIT_FAILURE;
@@ -30,6 +34,10 @@ int VulkanRenderer::InitRenderer (GLFWwindow *newWindow)
 
 void VulkanRenderer::CleanUp ()
 {
+	vkDestroyCommandPool (mainDevice.logicalDevice, graphicsCommandPool, nullptr);
+	for (auto framebuffer : swapchainFrameBuffers) {
+		vkDestroyFramebuffer (mainDevice.logicalDevice, framebuffer, nullptr);
+	}
 	vkDestroyPipeline (mainDevice.logicalDevice, graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout (mainDevice.logicalDevice, pipelineLayout, nullptr);
 	vkDestroyRenderPass (mainDevice.logicalDevice, renderPass, nullptr);
@@ -659,5 +667,103 @@ void VulkanRenderer::CreateRenderPass ()
 	VkResult result = vkCreateRenderPass (mainDevice.logicalDevice, &renderPassCreateInfo, nullptr, &renderPass);
 	if (result != VK_SUCCESS) {
 		throw std::runtime_error ("Failed to create a render pass...");
+	}
+}
+
+
+void VulkanRenderer::CreateFrameBuffers ()
+{
+	swapchainFrameBuffers.resize (swapchainImages.size ());
+	for (size_t i = 0; i < swapchainFrameBuffers.size (); ++i) {
+		std::array<VkImageView, 1> attachments = {
+			swapchainImages[i].imageView
+		};
+
+		VkFramebufferCreateInfo framebufferCreateInfo {};
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCreateInfo.renderPass = renderPass;
+		framebufferCreateInfo.attachmentCount = static_cast<uint32_t> (attachments.size ());
+		framebufferCreateInfo.pAttachments = attachments.data ();
+		framebufferCreateInfo.width = swapchainExtent.width;
+		framebufferCreateInfo.height = swapchainExtent.height;
+		framebufferCreateInfo.layers = 1;
+
+		VkResult result = vkCreateFramebuffer (mainDevice.logicalDevice, &framebufferCreateInfo, nullptr, &swapchainFrameBuffers[i]);
+		if (result != VK_SUCCESS) {
+			throw std::runtime_error ("Failed to create framebuffer...");
+		}
+	}
+}
+
+
+void VulkanRenderer::CreateCommandPool ()
+{
+	QueueFamilyIndices queueFamilyIndices = GetQueueFamilies (mainDevice.physicalDevice);
+
+	VkCommandPoolCreateInfo poolCreateInfo {};
+	poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily;
+
+	VkResult result = vkCreateCommandPool (mainDevice.logicalDevice, &poolCreateInfo, nullptr, &graphicsCommandPool);
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error ("Failed to create a command pool...");
+	}
+}
+
+
+void VulkanRenderer::CreateCommandBuffers ()
+{
+	commandBuffers.resize (swapchainFrameBuffers.size ());
+
+	VkCommandBufferAllocateInfo commandBufferAllocateInfo {};
+	commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	commandBufferAllocateInfo.commandPool = graphicsCommandPool;
+	commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	commandBufferAllocateInfo.commandBufferCount = static_cast<uint32_t> (commandBuffers.size ());
+
+	VkResult result = vkAllocateCommandBuffers (mainDevice.logicalDevice, &commandBufferAllocateInfo, commandBuffers.data ());
+	if (result != VK_SUCCESS) {
+		throw std::runtime_error ("Failed to allocate command buffers...");
+	}
+}
+
+
+void VulkanRenderer::RecordCommands ()
+{
+	VkCommandBufferBeginInfo beginInfo {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+	VkRenderPassBeginInfo renderPassBeginInfo {};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.renderPass = renderPass;
+	renderPassBeginInfo.renderArea.offset = {0, 0};
+	renderPassBeginInfo.renderArea.extent = swapchainExtent;
+	VkClearValue clearValues[] = {
+		{0.6f, 0.65f, 0.64f, 1.0f}
+	};
+	renderPassBeginInfo.pClearValues = clearValues;
+	renderPassBeginInfo.clearValueCount = 1;
+
+	for (size_t i = 0; i < commandBuffers.size (); ++i) {
+		renderPassBeginInfo.framebuffer = swapchainFrameBuffers[i];
+
+		VkResult result = vkBeginCommandBuffer (commandBuffers[i], &beginInfo);
+		if (result != VK_SUCCESS) {
+			throw std::runtime_error ("Failed to start recording a command buffer...");
+		}
+
+			vkCmdBeginRenderPass (commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+				vkCmdBindPipeline (commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+				vkCmdDraw (commandBuffers[i], 3, 1, 0, 0);
+
+			vkCmdEndRenderPass (commandBuffers[i]);
+
+		result = vkEndCommandBuffer (commandBuffers[i]);
+		if (result != VK_SUCCESS) {
+			throw std::runtime_error ("Failed to stop recording a command buffer...");
+		}
 	}
 }
