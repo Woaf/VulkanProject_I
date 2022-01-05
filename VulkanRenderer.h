@@ -19,12 +19,15 @@ public:
 	VulkanRenderer ();
 
 	int InitRenderer (GLFWwindow* newWindow);
+	void Draw ();
 	void CleanUp ();
 
 	~VulkanRenderer ();
 
 private:
 	GLFWwindow* window;
+
+	int currentFrame = 0;
 
 	// vk components
 		// main components
@@ -45,12 +48,17 @@ private:
 	VkPipelineLayout pipelineLayout;
 	VkRenderPass renderPass;
 
-	// pools
+		// pools
 	VkCommandPool graphicsCommandPool;
 
 		// utility components
 	VkFormat swapchainImageFormat;
 	VkExtent2D swapchainExtent;
+
+		// synch objects
+	std::vector<VkSemaphore> imagesAvailable;
+	std::vector<VkSemaphore> rendersFinished;
+	std::vector<VkFence> drawFences;
 
 
 	// vk functions
@@ -63,6 +71,7 @@ private:
 	void CreateFrameBuffers ();
 	void CreateCommandPool ();
 	void CreateCommandBuffers ();
+	void CreateSynchronization ();
 
 	// get methods
 	void GetPhysicalDevice ();
